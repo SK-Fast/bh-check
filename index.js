@@ -1,32 +1,20 @@
-const http = require('http');
 const axios = require('axios').default;
-const server = http.createServer();
-const { Server } = require("socket.io");
-const io = new Server(server, {
-    cors: '*'
-});
+const cors = require('cors')
+const express = require('express')
+const app = express()
 
-// https://api.brick-hill.com/v1/user/profile?id=2
+app.use(cors({origin: '*'}))
 
-const sockets = []
 
-setInterval(async () => {
-    const res = await axios.get('https://api.brick-hill.com/v1/user/profile?id=2', {
+app.all('/check', async(req, res) => {
+    const red = await axios.get('https://api.brick-hill.com/v1/user/profile?id=3', {
         validateStatus: () => true
     })
 
-    for (const socket of sockets) {
-        if (socket && socket.connected) {
-            socket.emit("status", res.status == 200 , res.status, res.statusText)
-        }
-    }
-}, 5000);
-
-io.on('connection', (socket) => {
-    console.log('a user connected');
-    sockets.push(socket)
-});
-  
-server.listen(3000, () => {
-    console.log('listening on *:3000');
-});
+    res.send(JSON.stringify({
+        isOnline: red.status == 200,
+        statusCode: red.status,
+        statusText: red.statusText,
+    }))
+})
+app.listen(process.env.PORT || 3000)
